@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ร้าน ป.ขาหมู - สั่งเดลิเวอรี่</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🐷</div>
+            <h1>ร้าน ป.ขาหมู</h1>
+            <p>สั่งอาหารเดลิเวอรี่ ราคาเท่าหน้าร้าน ค่าส่งตามจริง</p>
+            <div class="shop-phone">โทร: 086-262-4788</div>
+        </header>
+
+        <form id="order-form">
+            <div class="form-section">
+                <h2>รายละเอียดการจัดส่ง</h2>
+                <div class="form-group">
+                    <label for="customer-name">ชื่อ:</label>
+                    <input type="text" id="customer-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">เบอร์โทร:</label>
+                    <input type="tel" id="customer-phone" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-address">ที่อยู่จัดส่ง:</label>
+                    <input type="text" id="customer-address" placeholder="เช่น ร้านเสริมสวยข้าง 7-11..." required>
+                </div>
+                <div class="location-group">
+                    <button type="button" id="get-location-btn">📍 ใช้ตำแหน่งปัจจุบัน</button>
+                    <small id="location-status">ยังไม่ได้ระบุตำแหน่ง</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>เมนูอาหาร</h2>
+                <div id="menu-container">
+                    <p id="loading-menu">กำลังโหลดเมนู...</p>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Floating Footer -->
+    <div class="order-summary-footer">
+        <div class="summary-details">
+            <div>ค่าอาหาร: <span id="total-price-value">0</span> บ.</div>
+            <div class="grand-total">รวม: <span id="grand-total-value">0</span> บ.</div>
+        </div>
+        <button type="button" id="review-order-btn">ตรวจสอบออเดอร์</button>
+    </div>
+
+    <!-- Modal สรุปออเดอร์ -->
+    <div id="summary-modal" class="modal">
+        <div class="modal-content">
+            <h2>ตรวจสอบรายการสั่งซื้อ</h2>
+            <h3>รายละเอียดลูกค้า</h3>
+            <div id="customer-summary"></div>
+            <hr>
+            <h3>รายการอาหาร</h3>
+            <div id="order-summary-list"></div>
+            <div id="cost-summary">
+                <div class="cost-item"><span>ค่าอาหาร</span><span id="summary-food-total"></span></div>
+                <div class="cost-item"><span>ค่าส่ง (<span id="summary-distance"></span>)</span><span id="summary-delivery-fee"></span></div>
+                <div id="grand-total-modal"><span>รวมทั้งสิ้น</span><span id="summary-grand-total"></span></div>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" id="edit-order-btn">แก้ไข</button>
+                <button type="button" id="confirm-order-btn">ยืนยัน</button>
+            </div>
+            <div id="modal-spinner" class="spinner-container">
+                <div class="spinner"></div>
+                <p>กำลังคำนวณค่าส่ง...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thank You Modal -->
+    <div id="thank-you-modal" class="modal">
+        <div class="modal-content thank-you-content">
+            <h2>🙏 ขอบคุณสำหรับออเดอร์ครับ</h2>
+            <p>ร้านได้รับรายการสั่งซื้อของคุณเรียบร้อยแล้ว</p>
+            <hr>
+            <h3>การชำระเงิน</h3>
+            <p class="payment-instructions">
+                ลูกค้าชำระโดยสแกน QR CODE ในถุงอาหาร<br>
+                <strong class="highlight">ไม่ต้องจ่ายให้ไรเดอร์</strong>
+            </p>
+            <div class="modal-buttons">
+                <button type="button" id="close-thank-you-btn">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

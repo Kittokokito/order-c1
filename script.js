@@ -1,5 +1,5 @@
 // script.js (v6.0 - พร้อม calculateDeliveryFee + Notifications)
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyuABStmwl1YfouRYGyvHtoSRhlt2lYSkAgXkMkH21pffhJqclykksMq4vBSMnQaClt/exec'; // <-- เปลี่ยนเป็น URL ของคุณ
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwygchacVZIL4aPPobSJCdOQL5QihCwfD4AIdxfpIGxpOlPEi3mRuk3jyoMhScIX05d/exec'; // <-- เปลี่ยนเป็น URL ของคุณ
 
 window.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('order-form');
@@ -114,3 +114,90 @@ window.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.quantity-display').forEach(d=>{
             const qty=parseInt(d.textContent);
             if(qty>0){
+                const id=d.id.replace('qty-','');
+                const item = menuData.find(m=>m.ItemID===id);
+                if(item){
+                    let name=item.Name;
+                    const opt=document.querySelector(`input[name="option-${id}"]:checked`);
+                    if(opt) name+=` (${opt.value})`;
+                    const sp=document.querySelector(`.special-request-input[data-itemid="${id}"]`).value.trim();
+                    if(sp) name+=` [${sp}]`;
+                    details.push({name,qty,price:item.Price,total:item.Price*qty});
+                    foodTotal+=item.Price*qty;
+                }
+            }
+        });
+        return {
+            name: document.getElementById('customer-name').value,
+            phone: document.getElementById('customer-phone').value,
+            address: document.getElementById('customer-address').value,
+            orderDetailsRaw: details,
+            orderDetails: details.map(i=>`${i.name} (x${i.qty})`).join(', '),
+            totalPrice: foodTotal,
+            latitude: userLocation?.latitude,
+            longitude: userLocation?.longitude
+        };
+    }
+
+    // --- ตำแหน่งลูกค้า ---
+    getLocationBtn.addEventListener('click', ()=>{
+        locationStatus.textContent="กำลังค้นหาตำแหน่ง...";
+        if(navigator.geolocation){
+            navigator.geolocation.getCurrentPosition(
+                p=>{
+                    userLocation={latitude:p.coords.latitude, longitude:p.coords.longitude};
+                    locationStatus.textContent="✅ ได้รับตำแหน่งแล้ว!";
+                },
+                ()=>{ locationStatus.textContent="⚠️ ไม่สามารถเข้าถึงตำแหน่งได้"; }
+            );
+        } else locationStatus.textContent="เบราว์เซอร์ไม่รองรับฟังก์ชันนี้";
+    });
+
+    // --- ดูสรุปและคำนวณค่าส่ง ---
+    reviewOrderBtn.addEventListener('click', async ()=>{
+        if(!userLocation){ alert("กรุณากด 'ขอตำแหน่งปัจจุบัน' ก่อน"); return;}
+        if(!form.checkValidity()){ form.reportValidity(); return; }
+        currentOrderData=collectOrder();
+        if(currentOrderData.orderDetailsRaw.length===0){ alert("กรุณาเลือกอาหารอย่างน้อย 1 รายการ"); return;}
+
+        summaryModal.classList.add('active');
+        modalSpinner.style.display='block';
+        document.getElementById('cost-summary').style.display='none';
+        confirmOrderBtn.style.display='none';
+
+        customerSummary.innerHTML=`<div><strong>ชื่อ:</strong> ${currentOrderData.name}</div>
+        <div><strong>โทร:</strong> ${currentOrderData.phone}</div>
+        <div><strong>ที่อยู่:</strong> ${currentOrderData.address}</div>`;
+        orderSummaryList.innerHTML=currentOrderData.orderDetailsRaw.map(i=>`<div class="item-line"><span>- ${i.name} (x${i.qty})</span><span>${i.total} บ.</span></div>`).join('');
+
+        try{
+            const res = await fetch(WEB_APP_URL,{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({action:'calculateFee',lat:currentOrderData.latitude,lng:currentOrderData.longitude})
+            });
+            if(!res.ok) throw new Error('Server error');
+            const feeResult = await res.json();
+            if(feeResult.status==='success'){
+                currentOrderData.deliveryFee=feeResult.fee;
+                summaryDistance.textContent=`${feeResult.distance} กม.`;
+                summaryDeliveryFee.textContent=`${feeResult.fee} บาท`;
+                summaryFoodTotal.textContent=`${currentOrderData.totalPrice} บาท`;
+                summaryGrandTotal.textContent=`${currentOrderData.totalPrice+feeResult.fee} บาท`;
+            } else throw new Error(feeResult.message);
+        } catch(e){
+            alert(`คำนวณค่าส่งล้มเหลว: ${e.message}`);
+            currentOrderData.deliveryFee=-1;
+            summaryDeliveryFee.textContent="คำนวณไม่ได้";
+            summaryGrandTotal.textContent="N/A";
+        } finally{
+            modalSpinner.style.display='none';
+            document.getElementById('cost-summary').style.display='block';
+            if(currentOrderData.deliveryFee!==-1) confirmOrderBtn.style.display='block';
+        }
+    });
+
+    editOrderBtn.addEventListener('click', ()=>summaryModal.classList.remove('active'));
+    closeThankYouBtn.addEventListener('click', ()=>thankYouModal.classList.remove('active'));
+
+   
